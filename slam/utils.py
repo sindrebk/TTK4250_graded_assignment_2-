@@ -6,3 +6,9 @@ def wrapToPi(angle):
 def rotmat2d(angle):
     return np.array([[np.cos(angle), -np.sin(angle)],
                      [np.sin(angle),  np.cos(angle)]])
+
+def rotmat2dDerivative(angle):
+    return np.array([[-np.sin(angle), -np.cos(angle)],
+                     [np.cos(angle),  -np.sin(angle)]])
+
+

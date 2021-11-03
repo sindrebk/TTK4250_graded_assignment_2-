@@ -1,1 +1,7 @@
 *.pickle
+.vscode/*
+slam/solution/pytransform/__pycache__/*
+slam/__pycache__/*
+slam/solution/__pycache__/*
+tests/.vscode/*
+tests/__pycache__/*
