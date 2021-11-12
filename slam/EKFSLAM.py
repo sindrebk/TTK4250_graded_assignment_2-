@@ -111,13 +111,13 @@ class EKFSLAM:
         #return etapred_sol, P_sol
 
         # check inout matrix
-        assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P input"
-        assert np.all(
-            np.linalg.eigvals(P) >= 0
-        ), "EKFSLAM.predict: non-positive eigen values in P input"
-        assert (
-            eta.shape * 2 == P.shape
-        ), "EKFSLAM.predict: input eta and P shape do not match"
+        # assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P input"
+        # assert np.all(
+        #     np.linalg.eigvals(P) >= 0
+        # ), "EKFSLAM.predict: non-positive eigen values in P input"
+        # assert (
+        #     eta.shape * 2 == P.shape
+        # ), "EKFSLAM.predict: input eta and P shape do not match"
 
         etapred = np.empty_like(eta)
 
@@ -144,20 +144,6 @@ class EKFSLAM:
         P[4:, 0:3] = P[:3, 4:].T
 
         #P[:3, :3] = F[:3, :3] @ P[:3, :3] @ F[:3, :3].T + G[:3, :3] @ Q[:3, :3] @ G[:3, :3].T
-
-        return etapred, P
-        # If there are any landmarks
-        if eta.size > 3:
-            P[:3, 3:] = P[:3, 3:]   # TODO robot-map covariance prediction
-            P[3:, :3] = P[:3, 3:].T  # TODO map-robot covariance: transpose of the above
-
-        assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P"
-        assert np.all(
-            np.linalg.eigvals(P) > 0
-        ), "EKFSLAM.predict: non-positive eigen values"
-        assert (
-            etapred.shape * 2 == P.shape
-        ), "EKFSLAM.predict: calculated shapes does not match"
 
         return etapred, P
 
@@ -205,9 +191,9 @@ class EKFSLAM:
         # stack measurements along one dimension, [range1 bearing1 range2 bearing2 ...]
         zpred = zpred.T.ravel()
 
-        assert (
-            zpred.ndim == 1 and zpred.shape[0] == eta.shape[0] - 3
-        ), "SLAM.h: Wrong shape on zpred"
+        # assert (
+        #     zpred.ndim == 1 and zpred.shape[0] == eta.shape[0] - 3
+        # ), "SLAM.h: Wrong shape on zpred"
 
         return zpred
 
@@ -246,13 +232,8 @@ class EKFSLAM:
         zpred_theta = np.arctan2(zpos[1,:], zpos[0,:]) # bearings
         zpred = np.stack((zpred_r, zpred_theta))  
 
-        # TODO: temp, maybe not right
-        zr = zpred_r 
-
-
         Rpihalf = rotmat2d(np.pi / 2)
-
-        max_range = np.max(zr)
+        max_range = np.max(zpred_r)
 
         # In what follows you can be clever and avoid making this for all the landmarks you _know_
         # you will not detect (the maximum range should be available from the data).
@@ -320,7 +301,7 @@ class EKFSLAM:
         #return etaadded_sol, Padded_sol
 
         n = P.shape[0]
-        assert z.ndim == 1, "SLAM.add_landmarks: z must be a 1d array"
+        # assert z.ndim == 1, "SLAM.add_landmarks: z must be a 1d array"
 
         numLmk = z.shape[0] // 2
 
@@ -340,35 +321,42 @@ class EKFSLAM:
             inds = slice(ind, ind + 2)
             zj = z[inds]
 
-            rot = rotmat2d(zj[1] + eta[2])  # TODO, rotmat in Gz
-            # TODO, calculate position of new landmark in world frame
+            # Rotmat in Gz
+            rot = rotmat2d(zj[1] + eta[2])  
+
+            # Calculate position of new landmark in world frame
             lmnew[inds] = zj[0]*rot[:,0] + eta[:2] + sensor_offset_world
 
-            Gx[inds, :2] = I2  # TODO
-            Gx[inds, 2] = zj[0] * rot[:,1] + sensor_offset_world_der # TODO
+            Gx[inds, :2] = I2
+            Gx[inds, 2] = zj[0] * rot[:,1] + sensor_offset_world_der
 
-            Gz = rot @ np.diag((1, zj[0]))  # TODO
+            Gz = rot @ np.diag((1, zj[0])) 
 
-            # TODO, Gz * R * Gz^T, transform measurement covariance from polar to cartesian coordinates
+            # Gz * R * Gz^T, transform measurement covariance from polar to cartesian coordinates
             Rall[inds, inds] = Gz @ self.R @ Gz.T
 
-        assert len(lmnew) % 2 == 0, "SLAM.add_landmark: lmnew not even length"
-        etaadded = np.append(eta, lmnew.flatten(), axis=0)  # TODO, append new landmarks to state vector
-        # TODO, block diagonal of P_new, see problem text in 1g) in graded assignment 3
+        # assert len(lmnew) % 2 == 0, "SLAM.add_landmark: lmnew not even length"
+
+        # Append new landmarks to state vector
+        etaadded = np.append(eta, lmnew.flatten(), axis=0)  
+
+        # Block diagonal of P_new, see problem text in 1g) in graded assignment 3
         Padded = la.block_diag(P, Gx @ P[:3, :3] @ Gx.T + Rall)
-        Padded[n:, :n] = Gx @ P[:3, :]  # TODO, top left corner of P_new
-        # TODO, transpose of above. Should yield the same as calcualion, but this enforces symmetry and should be cheaper
+        Padded[n:, :n] = Gx @ P[:3, :]  # top left corner of P_new
+
+        # Transpose of above. Should yield the same as calcualion, but this 
+        # enforces symmetry and should be cheaper
         Padded[:n, n:] = Padded[n:, :n].T
 
-        assert (
-            etaadded.shape * 2 == Padded.shape
-        ), "EKFSLAM.add_landmarks: calculated eta and P has wrong shape"
-        assert np.allclose(
-            Padded, Padded.T
-        ), "EKFSLAM.add_landmarks: Padded not symmetric"
-        assert np.all(
-            np.linalg.eigvals(Padded) >= 0
-        ), "EKFSLAM.add_landmarks: Padded not PSD"
+        # assert (
+        #     etaadded.shape * 2 == Padded.shape
+        # ), "EKFSLAM.add_landmarks: calculated eta and P has wrong shape"
+        # assert np.allclose(
+        #     Padded, Padded.T
+        # ), "EKFSLAM.add_landmarks: Padded not symmetric"
+        # assert np.all(
+        #     np.linalg.eigvals(Padded) >= 0
+        # ), "EKFSLAM.add_landmarks: Padded not PSD"
         return etaadded, Padded
 
     def associate(
@@ -416,9 +404,9 @@ class EKFSLAM:
             Sass = S[zbarinds][:, zbarinds]
             Hass = H[zbarinds]
 
-            assert zpredass.shape == zass.shape
-            assert Sass.shape == zpredass.shape * 2
-            assert Hass.shape[0] == zpredass.shape[0]
+            # assert zpredass.shape == zass.shape
+            # assert Sass.shape == zpredass.shape * 2
+            # assert Hass.shape[0] == zpredass.shape[0]
 
             return zass, zpredass, Hass, Sass, a
         else:
@@ -445,11 +433,11 @@ class EKFSLAM:
             [description]
         """
         
-        #etaupd_sol, Pupd_sol, NIS_sol, a_sol = solution.EKFSLAM.EKFSLAM.update(self, eta, P, z)
-        #return etaupd_sol, Pupd_sol, NIS_sol, a_sol
+        # etaupd_sol, Pupd_sol, NIS_sol, a_sol = solution.EKFSLAM.EKFSLAM.update(self, eta, P, z)
+        # return etaupd_sol, Pupd_sol, NIS_sol, a_sol
 
         numLmk = (eta.size - 3) // 2
-        assert (len(eta) - 3) % 2 == 0, "EKFSLAM.update: landmark lenght not even"
+        # assert (len(eta) - 3) % 2 == 0, "EKFSLAM.update: landmark lenght not even"
 
         if numLmk > 0:
             # Prediction and innovation covariance
@@ -464,9 +452,9 @@ class EKFSLAM:
             diag[:] = self.R
             R = out.reshape(-1,n*numLmk)
             S = H @ P @ H.T  + R
-            assert (
-                S.shape == zpred.shape * 2
-            ), "EKFSLAM.update: wrong shape on either S or zpred"
+            # assert (
+            #     S.shape == zpred.shape * 2
+            # ), "EKFSLAM.update: wrong shape on either S or zpred"
             z = z.ravel()  # 2D -> flat
 
             # Perform data association
@@ -490,19 +478,22 @@ class EKFSLAM:
 
                 # Kalman cov update: use Joseph form for stability
                 jo = -W @ Ha
+
                 # same as adding Identity mat
                 jo[np.diag_indices(jo.shape[0])] += 1
                 Pupd = (np.eye( P.shape[0] ) - W @ Ha) @ P
 
                 # calculate NIS, can use S_cho_factors
                 # NIS = v @ la.cho_solve((S_cho_factors, lower), v)
+
                 NIS = v.T @ np.linalg.inv(Sa) @ v
+
                 # When tested, remove for speed
-                assert np.allclose(
-                    Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
-                assert np.all(
-                    np.linalg.eigvals(Pupd) > 0
-                ), "EKFSLAM.update: Pupd not positive definite"
+                # assert np.allclose(
+                #    Pupd, Pupd.T), "EKFSLAM.update: Pupd not symmetric"
+                #assert np.all(
+                #    np.linalg.eigvals(Pupd) > 0
+                #), "EKFSLAM.update: Pupd not positive definite"
 
         else:  # All measurements are new landmarks,
             a = np.full(z.shape[0], -1)
@@ -521,10 +512,10 @@ class EKFSLAM:
                 z_new = z[z_new_inds]
                 etaupd, Pupd = self.add_landmarks(etaupd, Pupd, z_new)  
 
-        assert np.allclose(
-            Pupd, Pupd.T), "EKFSLAM.update: Pupd must be symmetric"
-        assert np.all(np.linalg.eigvals(Pupd) >=
-                      0), "EKFSLAM.update: Pupd must be PSD"
+        # assert np.allclose(
+        #     Pupd, Pupd.T), "EKFSLAM.update: Pupd must be symmetric"
+        # assert np.all(np.linalg.eigvals(Pupd) >=
+        #               0), "EKFSLAM.update: Pupd must be PSD"
 
         return etaupd, Pupd, NIS, a
 
@@ -563,8 +554,13 @@ class EKFSLAM:
             P_heading) == 0, "EKFSLAM.NEES: P_heading must be scalar"
 
         # NB: Needs to handle both vectors and scalars! Additionally, must handle division by zero
-        NEES_all = d_x @ (np.linalg.solve(P, d_x))
-        NEES_pos = d_p @ (np.linalg.solve(P_p, d_p))
+        if np.linalg.det(P) != 0:
+            NEES_all = d_x @ (np.linalg.solve(P, d_x))
+            NEES_pos = d_p @ (np.linalg.solve(P_p, d_p))
+        else:
+            NEES_all = 1.0
+            NEES_pos = 1.0
+
         try:
             NEES_heading = d_heading ** 2 / P_heading
         except ZeroDivisionError:
