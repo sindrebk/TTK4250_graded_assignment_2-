@@ -107,8 +107,8 @@ class EKFSLAM:
             predicted mean and covariance of eta.
         """
          
-        #etapred_sol, P_sol = solution.EKFSLAM.EKFSLAM.predict(self, eta, np.copy(P), z_odo)
-        #return etapred_sol, P_sol
+        # etapred_sol, P_sol = solution.EKFSLAM.EKFSLAM.predict(self, eta, np.copy(P), z_odo)
+        # return etapred_sol, P_sol
 
         # check inout matrix
         # assert np.allclose(P, P.T), "EKFSLAM.predict: not symmetric P input"
@@ -134,10 +134,10 @@ class EKFSLAM:
         # [[P_xx, P_xm],
         # [P_mx, P_mm]]
 
-        G = np.block([[np.eye(3)], [np.zeros((eta.size - 3, 3))]])
-        Q = self.Q
+        # G = np.block([[np.eye(3)], [np.zeros((eta.size - 3, 3))]])
+        # Q = self.Q
 
-        F = la.block_diag(Fx, np.eye( 2*( eta.size - 3)) )
+        # F = la.block_diag(Fx, np.eye( 2*( eta.size - 3)) )
 
         P[:3, :3] = Fx @ P[:3, :3] @ Fx.T + Fu @ self.Q @ Fu.T
         P[:3, 4:] = Fx @ P[:3, 4:]
@@ -481,12 +481,12 @@ class EKFSLAM:
 
                 # same as adding Identity mat
                 jo[np.diag_indices(jo.shape[0])] += 1
-                Pupd = (np.eye( P.shape[0] ) - W @ Ha) @ P
+                Pupd = jo @ P @ jo.T + W @ np.kron(np.eye(za.size // 2), self.R) @ W.T 
 
                 # calculate NIS, can use S_cho_factors
                 # NIS = v @ la.cho_solve((S_cho_factors, lower), v)
 
-                NIS = v.T @ np.linalg.inv(Sa) @ v
+                NIS = v.T @ np.linalg.solve(Sa, v) 
 
                 # When tested, remove for speed
                 # assert np.allclose(
