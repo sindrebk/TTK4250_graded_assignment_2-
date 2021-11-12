@@ -471,9 +471,8 @@ class EKFSLAM:
                 v[1::2] = utils.wrapToPi(v[1::2])
 
                 # Kalman mean update
-                # S_cho_factors, lower = la.cho_factor(Sa) # Optional, used in places for S^-1, see scipy.linalg.cho_factor and scipy.linalg.cho_solve
-                # W = la.cho_solve((S_cho_factors.T , lower), (P @ H.T).T ).T
-                W = P @ Ha.T @ np.linalg.inv(Sa)
+                S_cho_factors, lower = la.cho_factor(Sa.T) # Optional, used in places for S^-1, see scipy.linalg.cho_factor and scipy.linalg.cho_solve
+                W = la.cho_solve((S_cho_factors , lower), (Ha @ P.T) ).T
                 etaupd = eta + W @ v
 
                 # Kalman cov update: use Joseph form for stability
@@ -484,9 +483,7 @@ class EKFSLAM:
                 Pupd = jo @ P @ jo.T + W @ np.kron(np.eye(za.size // 2), self.R) @ W.T 
 
                 # calculate NIS, can use S_cho_factors
-                # NIS = v @ la.cho_solve((S_cho_factors, lower), v)
-
-                NIS = v.T @ np.linalg.solve(Sa, v) 
+                NIS = la.cho_solve((S_cho_factors, lower), v) @ v    
 
                 # When tested, remove for speed
                 # assert np.allclose(
