@@ -98,16 +98,16 @@ def main():
 
     # %% Initilize
     Q = np.diag([0.1, 0.1, 1 * np.pi / 180]) ** 2  # TODO tune
-    R = np.diag([0.1, 1 * np.pi / 180]) ** 2  # TODO tune
+    R = np.diag([0.06, 0.9 * np.pi / 180]) ** 2  # TODO tune
 
     # first is for joint compatibility, second is individual
-    JCBBalphas = np.array([0.001, 0.0001])  # TODO tune
+    JCBBalphas = np.array([0.1, 0.01])  # TODO tune
 
     doAsso = True
 
 
-# these can have a large effect on runtime either through the number of landmarks created
-# or by the size of the association search space.
+    # these can have a large effect on runtime either through the number of landmarks created
+    # or by the size of the association search space.
 
     slam = EKFSLAM(Q, R, do_asso=doAsso, alphas=JCBBalphas)
 
@@ -234,7 +234,9 @@ def main():
     ax3.plot(CInorm[:N, 1], '--')
     ax3.plot(NISnorm[:N], lw=0.5)
 
-    ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI')
+    ANIS = np.mean(NISnorm)
+    anis_confidence_bound = np.array(chi2.interval(0.9, len(NISnorm))) / len(NISnorm)
+    ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]')
 
     # NEES
 
@@ -249,7 +251,11 @@ def main():
         ax.plot(np.full(N, CI_NEES[1]), '--')
         ax.plot(NEES[:N], lw=0.5)
         insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
-        ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI')
+
+        anees_confidence_bound = np.array(chi2.interval(0.9, len(NEES) * df)) / len(NEES)
+        ANEES = np.mean(NEES)
+
+        ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI \n ANEES: {ANEES:.2f}, confidence interval (90 %): [{anees_confidence_bound[0]:.2f} {anees_confidence_bound[1]:.2f}]')
 
         CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
         print(f"CI ANEES {tag}: {CI_ANEES}")
