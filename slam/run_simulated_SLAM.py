@@ -249,7 +249,11 @@ def main():
         ax.plot(np.full(N, CI_NEES[1]), '--')
         ax.plot(NEES[:N], lw=0.5)
         insideCI = (CI_NEES[0] <= NEES) * (NEES <= CI_NEES[1])
-        ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI')
+
+        anees_confidence_bound = np.array(chi2.interval(0.9, len(NEES) * df)) / len(NEES)
+        ANEES = np.mean(NEES)
+
+        ax.set_title(f'NEES {tag}: {insideCI.mean()*100}% inside CI \n ANEES: {ANEES}, confidence bound: {anees_confidence_bound}')
 
         CI_ANEES = np.array(chi2.interval(alpha, df*N)) / N
         print(f"CI ANEES {tag}: {CI_ANEES}")
