@@ -110,13 +110,13 @@ def main():
 
     car = Car(L, H, a, b)
 
-    sigmas = 0.025 * np.array([0.0001, 0.00005, 6 * np.pi / 180])  # TODO tune
+    sigmas = 0.05 * np.array([0.0001, 0.00005, 6 * np.pi / 180])  # TODO tune
     CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
     Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
-    R = np.diag([0.1, 1 * np.pi / 180]) ** 2  # TODO tune
+    R = np.diag([0.01, 0.1 * np.pi / 180]) ** 2  # TODO tune
 
     # first is for joint compatibility, second is individual
-    JCBBalphas = np.array([0.00001, 1e-6])  # TODO tune
+    JCBBalphas = np.array([0.1, 0.01])  # TODO tune
 
     sensorOffset = np.array([car.a + car.L, car.b])
     doAsso = True
@@ -125,7 +125,7 @@ def main():
                    sensor_offset=sensorOffset)
 
     # For consistency testing
-    alpha = 0.05
+    alpha = 0.95
     confidence_prob = 1 - alpha
 
     xupd = np.zeros((mK, 3))
@@ -145,7 +145,7 @@ def main():
     t = timeOdo[0]
 
     # %%  run
-    N = 1000  # K
+    N = 3000  # K
 
     doPlot = False
 
@@ -182,10 +182,10 @@ def main():
             # ? reset time to this laser time for next post predict
             t = timeLsr[mk]
             odo = odometry(speed[k + 1], steering[k + 1], dt, car)
-            eta, P =  # TODO predict
+            eta, P =  slam.predict(eta, P, odo)
 
             z = detectTrees(LASER[mk])
-            eta, P, NIS[mk], a[mk] =  # TODO update
+            eta, P, NIS[mk], a[mk] =  slam.update(eta, P, z)
 
             num_asso = np.count_nonzero(a[mk] > -1)
 
