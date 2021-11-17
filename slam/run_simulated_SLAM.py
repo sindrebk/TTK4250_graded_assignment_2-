@@ -96,12 +96,42 @@ def main():
     K = len(z)
     M = len(landmarks)
 
+    """
+    # Initial (handed out):
+
     # %% Initilize
-    Q = np.diag([0.1, 0.1, 1 * np.pi / 180]) ** 2  # TODO tune
-    R = np.diag([0.06, 0.9 * np.pi / 180]) ** 2  # TODO tune
+    Q = np.diag([0.1, 0.1, 1 * np.pi / 180]) ** 2  
+    R = np.diag([0.1, 1 * np.pi / 180]) ** 2 
 
     # first is for joint compatibility, second is individual
-    JCBBalphas = np.array([0.1, 0.01])  # TODO tune
+    JCBBalphas = np.array([0.001, 0.0001])  
+
+    """
+
+
+    # Better performance (RMSE):
+
+    # %% Initilize
+    Q = np.diag([0.1, 0.1, 1 * np.pi / 180]) ** 2  
+    R = np.diag([0.06, 0.9 * np.pi / 180]) ** 2  
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.1, 0.01])  
+    """
+
+    # Similar performance in terms of error but bad performance in terms of
+    # consistency
+
+    # %% Initilize
+    Q = np.diag([0.1, 0.1, 1 * np.pi / 180]) ** 2  
+    R = np.diag([0.05, 1 * np.pi / 180]) ** 2  # Only one changed
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.001, 0.0001])  
+
+    """
+
+
 
     doAsso = True
 
@@ -225,6 +255,7 @@ def main():
     ax2.set(title="results", xlim=(mins[0], maxs[0]), ylim=(mins[1], maxs[1]))
     ax2.axis("equal")
     ax2.grid()
+    fig2.savefig("trajectory.eps", format="eps")
 
     # %% Consistency
 
@@ -237,9 +268,11 @@ def main():
     ax3.plot(NISnorm[:N], lw=0.5)
 
 
+
     anis_confidence_bound = np.array(chi2.interval(0.9, 2 * total_number_of_associations)) / total_number_of_associations
     ANIS = np.sum(NIS) / total_number_of_associations
     ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]')
+    fig3.savefig("NIS.eps", format="eps")
 
     # NEES
 
@@ -265,6 +298,7 @@ def main():
         print(f"ANEES {tag}: {NEES.mean()}")
 
     fig4.tight_layout()
+    fig4.savefig("NEES.eps", format="eps")
 
     # %% RMSE
 
@@ -287,6 +321,7 @@ def main():
         ax.grid()
 
     fig5.tight_layout()
+    fig5.savefig("RMSE.eps", format="eps")
 
     # %% Movie time
 
