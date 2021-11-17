@@ -108,7 +108,7 @@ def main():
 
     """
 
-
+    """
     # Better performance (RMSE):
 
     # %% Initilize
@@ -128,8 +128,6 @@ def main():
 
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.001, 0.0001])  
-
-    """
 
 
 
