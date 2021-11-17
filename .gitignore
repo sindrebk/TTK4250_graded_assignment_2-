@@ -6,3 +6,4 @@ slam/solution/__pycache__/*
 tests/.vscode/*
 tests/__pycache__/*
 *.DS_Store
+./*.eps
