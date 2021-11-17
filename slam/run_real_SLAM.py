@@ -110,6 +110,7 @@ def main():
 
     car = Car(L, H, a, b)
 
+    """
     # Initial
 
     sigmas = 0.025 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
@@ -119,7 +120,8 @@ def main():
 
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.00001, 1e-6])
- 
+    """
+
     """
     # Better performance
 
@@ -131,6 +133,14 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.1, 0.01])
     """
+
+    sigmas = 0.025 * np.array([0.9 * 0.0001, 0.9 * 0.00005, 6 * np.pi / 180])
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.1, 1 * np.pi / 180]) ** 2 
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.00001, 1e-6])
 
 
     sensorOffset = np.array([car.a + car.L, car.b])
@@ -161,7 +171,7 @@ def main():
     t = timeOdo[0]
 
     # %%  run
-    N = K # K
+    N = 5000 # K
 
     doPlot = False
 
@@ -300,7 +310,7 @@ def main():
     ax6.set(
         title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
     )
-    ax6.legend(["Measurements", "GPS", "Trajectory"])
+    ax6.legend(["Trajectory", "Measurements", "GPS"])
     fig6.savefig("landmarks.eps", format="eps")
     plt.show()
 
