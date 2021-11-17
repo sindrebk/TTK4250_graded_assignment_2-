@@ -161,7 +161,7 @@ def main():
     t = timeOdo[0]
 
     # %%  run
-    N = 8000  # K
+    N = K # K
 
     doPlot = False
 
@@ -195,7 +195,7 @@ def main():
             if dt < 0:  # avoid assertions as they can be optimized avay?
                 raise ValueError("negative time increment")
 
-            # ? reset time to this laser time for next post predict
+            # reset time to this laser time for next post predict
             t = timeLsr[mk]
             odo = odometry(speed[k + 1], steering[k + 1], dt, car)
             eta, P =  slam.predict(eta, P, odo)
@@ -302,8 +302,6 @@ def main():
     )
     ax6.legend(["Measurements", "GPS", "Trajectory"])
     fig6.savefig("landmarks.eps", format="eps")
-
-    # fig6.savefig("NIS.eps", format="eps")
     plt.show()
 
 
