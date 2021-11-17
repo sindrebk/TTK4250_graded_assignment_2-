@@ -96,7 +96,6 @@ def main():
     K = len(z)
     M = len(landmarks)
 
-    """
     # Initial (handed out):
 
     # %% Initilize
@@ -106,7 +105,6 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.001, 0.0001])  
 
-    """
 
     """
     # Better performance (RMSE):
@@ -119,6 +117,7 @@ def main():
     JCBBalphas = np.array([0.1, 0.01])  
     """
 
+    """
     # Similar performance in terms of error but bad performance in terms of
     # consistency
 
@@ -129,7 +128,7 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.001, 0.0001])  
 
-
+    """
 
     doAsso = True
 
@@ -153,7 +152,7 @@ def main():
     total_number_of_associations = 0;
 
     # For consistency testing
-    alpha = 0.935
+    alpha = 0.95
 
     # init
     eta_pred[0] = poseGT[0]  # we start at the correct position for reference
@@ -219,6 +218,7 @@ def main():
             plt.pause(0.001)
 
     print("sim complete")
+    print(f"Number of associations: {total_number_of_associations}")
 
     pose_est = np.array([x[:3] for x in eta_hat[:N]])
     lmk_est = [eta_hat_k[3:].reshape(-1, 2) for eta_hat_k in eta_hat]
