@@ -110,6 +110,19 @@ def main():
 
     car = Car(L, H, a, b)
 
+    """
+    # Initial
+
+    sigmas = 0.025 * np.array([0.0001, 0.00005, 6 * np.pi / 180])  # TODO tune
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.1, 1 * np.pi / 180]) ** 2  # TODO tune
+
+    JCBBalphas = np.array([0.00001, 1e-6])  # TODO tune
+    """
+
+    # Better performance
+
     sigmas = 0.05 * np.array([0.0001, 0.00005, 6 * np.pi / 180])  # TODO tune
     CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
     Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
@@ -243,6 +256,7 @@ def main():
     ax3.plot(NISnorm[:mk], lw=0.5)
 
     ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
+    fig3.savefig("NIS.eps", format="eps")
 
     # %% slam
 
@@ -259,6 +273,7 @@ def main():
         ax5.grid()
         ax5.set_title("GPS vs odometry integration")
         ax5.legend()
+        fig5.savefig("gps_vs_odometry_integration.eps", format="eps")
 
     # %%
     fig6, ax6 = plt.subplots(num=6, clear=True)
@@ -267,6 +282,9 @@ def main():
     ax6.set(
         title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
     )
+    fig6.savefig("landmarks.eps", format="eps")
+
+    # fig6.savefig("NIS.eps", format="eps")
     plt.show()
 
 

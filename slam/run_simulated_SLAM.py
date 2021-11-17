@@ -96,6 +96,7 @@ def main():
     K = len(z)
     M = len(landmarks)
 
+    """
     # Initial (handed out):
 
     # %% Initilize
@@ -105,6 +106,7 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.001, 0.0001])  
 
+    """
 
     """
     # Better performance (RMSE):
@@ -129,6 +131,16 @@ def main():
     JCBBalphas = np.array([0.001, 0.0001])  
 
     """
+
+    # Better ANEES: 
+
+    # %% Initilize
+    Q = np.diag([0.055, 0.055, 1 * np.pi / 180]) ** 2  # Changed for x and y position
+    R = np.diag([0.1, 1 * np.pi / 180]) ** 2 
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.001, 0.0001])  
+
 
     doAsso = True
 
