@@ -122,6 +122,7 @@ def main():
     CI = np.zeros((K, 2))
     CInorm = np.zeros((K, 2))
     NEESes = np.zeros((K, 3))
+    total_number_of_associations = 0;
 
     # For consistency testing
     alpha = 0.935
@@ -158,6 +159,7 @@ def main():
         ), "dimensions of mean and covariance do not match"
 
         num_asso = np.count_nonzero(a[k] > -1)
+        total_number_of_associations += num_asso;
 
         CI[k] = chi2.interval(alpha, 2 * num_asso)
 
@@ -234,8 +236,9 @@ def main():
     ax3.plot(CInorm[:N, 1], '--')
     ax3.plot(NISnorm[:N], lw=0.5)
 
-    ANIS = np.mean(NISnorm)
-    anis_confidence_bound = np.array(chi2.interval(0.9, len(NISnorm))) / len(NISnorm)
+
+    anis_confidence_bound = np.array(chi2.interval(0.9, 2 * total_number_of_associations)) / total_number_of_associations
+    ANIS = np.sum(NIS) / total_number_of_associations
     ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]')
 
     # NEES
