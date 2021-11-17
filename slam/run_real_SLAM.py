@@ -110,26 +110,28 @@ def main():
 
     car = Car(L, H, a, b)
 
-    """
     # Initial
 
-    sigmas = 0.025 * np.array([0.0001, 0.00005, 6 * np.pi / 180])  # TODO tune
+    sigmas = 0.025 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
     CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
     Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
-    R = np.diag([0.1, 1 * np.pi / 180]) ** 2  # TODO tune
-
-    JCBBalphas = np.array([0.00001, 1e-6])  # TODO tune
-    """
-
-    # Better performance
-
-    sigmas = 0.05 * np.array([0.0001, 0.00005, 6 * np.pi / 180])  # TODO tune
-    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
-    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
-    R = np.diag([0.01, 0.1 * np.pi / 180]) ** 2  # TODO tune
+    R = np.diag([0.1, 1 * np.pi / 180]) ** 2 
 
     # first is for joint compatibility, second is individual
-    JCBBalphas = np.array([0.1, 0.01])  # TODO tune
+    JCBBalphas = np.array([0.00001, 1e-6])
+ 
+    """
+    # Better performance
+
+    sigmas = 0.05 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.01, 0.1 * np.pi / 180]) ** 2
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.1, 0.01])
+    """
+
 
     sensorOffset = np.array([car.a + car.L, car.b])
     doAsso = True
@@ -147,6 +149,7 @@ def main():
     NISnorm = np.zeros(mK)
     CI = np.zeros((mK, 2))
     CInorm = np.zeros((mK, 2))
+    total_number_of_associations = 0
 
     # Initialize state
     # you might want to tweak these for a good reference
@@ -158,7 +161,7 @@ def main():
     t = timeOdo[0]
 
     # %%  run
-    N = 3000  # K
+    N = 8000  # K
 
     doPlot = False
 
@@ -201,6 +204,7 @@ def main():
             eta, P, NIS[mk], a[mk] =  slam.update(eta, P, z)
 
             num_asso = np.count_nonzero(a[mk] > -1)
+            total_number_of_associations += num_asso
 
             if num_asso > 0:
                 NISnorm[mk] = NIS[mk] / (2 * num_asso)
@@ -255,7 +259,9 @@ def main():
     ax3.plot(CInorm[:mk, 1], "--")
     ax3.plot(NISnorm[:mk], lw=0.5)
 
-    ax3.set_title(f"NIS, {insideCI.mean()*100:.2f}% inside CI")
+    anis_confidence_bound = np.array(chi2.interval(0.9, 2 * total_number_of_associations)) / total_number_of_associations
+    ANIS = np.sum(NIS) / total_number_of_associations
+    ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]')
     fig3.savefig("NIS.eps", format="eps")
 
     # %% slam
@@ -277,11 +283,24 @@ def main():
 
     # %%
     fig6, ax6 = plt.subplots(num=6, clear=True)
+
+    active_time_gps_values = timeGps[timeGps < timeOdo[N-1]]
+    time_gps_delta = active_time_gps_values[-1] - timeGps[0]
+    color_scale = (active_time_gps_values - timeGps[0]) / time_gps_delta
+
     ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
+    ax6.scatter(
+            Lo_m[timeGps < timeOdo[N - 1]],
+            La_m[timeGps < timeOdo[N - 1]],
+            c=color_scale,
+            marker=".",
+            label="GPS",
+    )
     ax6.plot(*xupd[mk_first:mk, :2].T)
     ax6.set(
         title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
     )
+    ax6.legend(["Measurements", "GPS", "Trajectory"])
     fig6.savefig("landmarks.eps", format="eps")
 
     # fig6.savefig("NIS.eps", format="eps")
