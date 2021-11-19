@@ -133,6 +133,8 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.1, 0.01])
     """
+
+    """
     # Good NIS and ANIS
 
     sigmas = 0.025 * np.array([0.05, 0.05, 10 * np.pi / 180]) #73.73, 1.97 @ 12K - 75.27, 2.10 @ 24K
@@ -142,6 +144,31 @@ def main():
 
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.00001, 1e-6])
+    """
+
+    """
+    # Tune resulting in more landmarks
+    
+    sigmas = 0.025 * np.array([0.05, 0.05, 10 * np.pi / 180]) #73.73, 1.97 @ 12K - 75.27, 2.10 @ 24K
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.08, 0.8 * np.pi / 180]) ** 2 
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.001, 1e-4])
+
+    """
+    
+    # Tune barely keeping track
+
+    sigmas = 0.005 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.1, 1 * np.pi / 180]) ** 2 
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.00001, 1e-6])
+
 
     sensorOffset = np.array([car.a + car.L, car.b])
     doAsso = True
@@ -171,10 +198,9 @@ def main():
     t = timeOdo[0]
 
     # %%  run
-    N = K
+    N = 15000
 
     doPlot = False
-
     lh_pose = None
 
     if doPlot:
@@ -193,6 +219,8 @@ def main():
         for k in range(min(N, K - 1)):
             odos[k + 1] = odometry(speed[k + 1], steering[k + 1], 0.025, car)
             odox[k + 1], _ = slam.predict(odox[k], P_odo, odos[k + 1])
+
+    gps_current_time_index = 0
 
     for k in tqdm(range(N)):
         if mk < mK - 1 and timeLsr[mk] <= timeOdo[k + 1]:
@@ -272,8 +300,8 @@ def main():
     anis_confidence_bound = np.array(chi2.interval(0.9, 2 * total_number_of_associations)) / total_number_of_associations
     ANIS = np.sum(NIS) / total_number_of_associations
     ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]')
-    fig3.savefig("NIS.eps", format="eps")
-
+    fig3.savefig("NIS.eps", format="eps")    
+    
     # %% slam
 
     if do_raw_prediction:
