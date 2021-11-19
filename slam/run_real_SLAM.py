@@ -123,25 +123,28 @@ def main():
     """
 
     """
-    # Better performance
-
-    sigmas = 0.05 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
-    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
-    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
-    R = np.diag([0.01, 0.1 * np.pi / 180]) ** 2
-
-    # first is for joint compatibility, second is individual
-    JCBBalphas = np.array([0.1, 0.01])
-    """
     # Good NIS and ANIS
 
-    sigmas = 0.025 * np.array([0.05, 0.05, 10 * np.pi / 180]) #73.73, 1.97 @ 12K - 75.27, 2.10 @ 24K
+    sigmas = 0.025 * np.array([0.05, 0.05, 10 * np.pi / 180]) 
     CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
     Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
     R = np.diag([0.08, 0.8 * np.pi / 180]) ** 2 
 
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.00001, 1e-6])
+
+    """
+
+    # More landmarks
+
+    sigmas = 0.025 * np.array([0.05, 0.05, 10 * np.pi / 180])
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.08, 0.8 * np.pi / 180]) ** 2 
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.001, 1e-6]) # Increased joint compatibility from initial
+
 
     sensorOffset = np.array([car.a + car.L, car.b])
     doAsso = True
@@ -207,6 +210,7 @@ def main():
 
             # reset time to this laser time for next post predict
             t = timeLsr[mk]
+
             odo = odometry(speed[k + 1], steering[k + 1], dt, car)
             eta, P =  slam.predict(eta, P, odo)
 
