@@ -25,7 +25,6 @@ from utils import rotmat2d
 
 # %% plot config check and style setup
 
-
 # to see your plot config
 print(f"matplotlib backend: {matplotlib.get_backend()}")
 print(f"matplotlib config file: {matplotlib.matplotlib_fname()}")
@@ -47,7 +46,6 @@ if "inline" in matplotlib.get_backend():
 
 print("continuing with this plotting backend", end="\n\n\n")
 
-
 # set styles
 try:
     # installed with "pip install SciencePLots" (https://github.com/garrettj403/SciencePlots.git)
@@ -58,27 +56,25 @@ try:
 except Exception as e:
     print(e)
     print("setting grid and only grid and legend manually")
-    plt.rcParams.update(
-        {
-            # setgrid
-            "axes.grid": True,
-            "grid.linestyle": ":",
-            "grid.color": "k",
-            "grid.alpha": 0.5,
-            "grid.linewidth": 0.5,
-            # Legend
-            "legend.frameon": True,
-            "legend.framealpha": 1.0,
-            "legend.fancybox": True,
-            "legend.numpoints": 1,
-        }
-    )
+    plt.rcParams.update({
+        # setgrid
+        "axes.grid": True,
+        "grid.linestyle": ":",
+        "grid.color": "k",
+        "grid.alpha": 0.5,
+        "grid.linewidth": 0.5,
+        # Legend
+        "legend.frameon": True,
+        "legend.framealpha": 1.0,
+        "legend.fancybox": True,
+        "legend.numpoints": 1,
+    })
 
 
 def main():
     # %% Load data
-    victoria_park_foler = Path(
-        __file__).parents[1].joinpath("data/victoria_park")
+    victoria_park_foler = Path(__file__).parents[1].joinpath(
+        "data/victoria_park")
     realSLAM_ws = {
         **loadmat(str(victoria_park_foler.joinpath("aa3_dr"))),
         **loadmat(str(victoria_park_foler.joinpath("aa3_lsr2"))),
@@ -109,7 +105,6 @@ def main():
     b = 0.5  # laser distance to the left of center
 
     car = Car(L, H, a, b)
-
     """
     # Initial
 
@@ -121,7 +116,6 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.00001, 1e-6])
     """
-
     """
     # Good NIS and ANIS
 
@@ -134,7 +128,6 @@ def main():
     JCBBalphas = np.array([0.00001, 1e-6])
 
     """
-
     """
     # Good NIS and ANIS
 
@@ -148,7 +141,6 @@ def main():
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.00001, 1e-6])
     """
-
     """
     # Tune resulting in more landmarks
     
@@ -161,22 +153,35 @@ def main():
     JCBBalphas = np.array([0.001, 1e-4])
 
     """
-    
-    # Tune barely keeping track
+    """
+    # Tune not keeping track
 
     sigmas = 0.005 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
     CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
     Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
-    R = np.diag([0.1, 1 * np.pi / 180]) ** 2 
+    R = np.diag([0.1, 1 * np.pi / 180])**2
+
+    # first is for joint compatibility, second is individual
+    JCBBalphas = np.array([0.00001, 1e-6])
+    """
+
+    # Tune barely keeping track
+
+    sigmas = 0.010 * np.array([0.0001, 0.00005, 6 * np.pi / 180])
+    CorrCoeff = np.array([[1, 0, 0], [0, 1, 0.9], [0, 0.9, 1]])
+    Q = np.diag(sigmas) @ CorrCoeff @ np.diag(sigmas)
+    R = np.diag([0.1, 1 * np.pi / 180])**2
 
     # first is for joint compatibility, second is individual
     JCBBalphas = np.array([0.00001, 1e-6])
 
-
     sensorOffset = np.array([car.a + car.L, car.b])
     doAsso = True
 
-    slam = EKFSLAM(Q, R, do_asso=doAsso, alphas=JCBBalphas,
+    slam = EKFSLAM(Q,
+                   R,
+                   do_asso=doAsso,
+                   alphas=JCBBalphas,
                    sensor_offset=sensorOffset)
 
     # For consistency testing
@@ -201,7 +206,7 @@ def main():
     t = timeOdo[0]
 
     # %%  run
-    N = 15000
+    N = K
 
     doPlot = False
     lh_pose = None
@@ -240,19 +245,19 @@ def main():
             t = timeLsr[mk]
 
             odo = odometry(speed[k + 1], steering[k + 1], dt, car)
-            eta, P =  slam.predict(eta, P, odo)
+            eta, P = slam.predict(eta, P, odo)
 
             z = detectTrees(LASER[mk])
-            eta, P, NIS[mk], a[mk] =  slam.update(eta, P, z)
+            eta, P, NIS[mk], a[mk] = slam.update(eta, P, z)
 
             num_asso = np.count_nonzero(a[mk] > -1)
             total_number_of_associations += num_asso
 
             if num_asso > 0:
                 NISnorm[mk] = NIS[mk] / (2 * num_asso)
-                CInorm[mk] = np.array(chi2.interval(confidence_prob, 2 * num_asso)) / (
-                    2 * num_asso
-                )
+                CInorm[mk] = np.array(
+                    chi2.interval(confidence_prob,
+                                  2 * num_asso)) / (2 * num_asso)
             else:
                 NISnorm[mk] = 1
                 CInorm[mk].fill(1)
@@ -263,21 +268,18 @@ def main():
                 sh_lmk.set_offsets(eta[3:].reshape(-1, 2))
                 if len(z) > 0:
                     zinmap = (
-                        rotmat2d(eta[2])
-                        @ (
-                            z[:, 0] *
-                            np.array([np.cos(z[:, 1]), np.sin(z[:, 1])])
-                            + slam.sensor_offset[:, None]
-                        )
-                        + eta[0:2, None]
-                    )
+                        rotmat2d(eta[2]) @ (z[:, 0] * np.array(
+                            [np.cos(z[:, 1]), np.sin(z[:, 1])]) +
+                                            slam.sensor_offset[:, None]) +
+                        eta[0:2, None])
                     sh_Z.set_offsets(zinmap.T)
                 lh_pose.set_data(*xupd[mk_first:mk, :2].T)
 
                 ax.set(
                     xlim=[-200, 200],
                     ylim=[-200, 200],
-                    title=f"step {k}, laser scan {mk}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}",
+                    title=
+                    f"step {k}, laser scan {mk}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}",
                 )
                 plt.draw()
                 plt.pause(0.00001)
@@ -301,11 +303,16 @@ def main():
     ax3.plot(CInorm[:mk, 1], "--")
     ax3.plot(NISnorm[:mk], lw=0.5)
 
-    anis_confidence_bound = np.array(chi2.interval(0.9, 2 * total_number_of_associations)) / total_number_of_associations
+    anis_confidence_bound = np.array(
+        chi2.interval(
+            0.9,
+            2 * total_number_of_associations)) / total_number_of_associations
     ANIS = np.sum(NIS) / total_number_of_associations
-    ax3.set_title(f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]')
-    fig3.savefig("NIS.eps", format="eps")    
-    
+    ax3.set_title(
+        f'NIS, {insideCI.mean()*100}% inside CI \n ANIS: {ANIS:.2f}, confidence interval (90 %): [{anis_confidence_bound[0]:.2f} {anis_confidence_bound[1]:.2f}]'
+    )
+    fig3.savefig("NIS.eps", format="eps")
+
     # %% slam
 
     if do_raw_prediction:
@@ -326,21 +333,22 @@ def main():
     # %%
     fig6, ax6 = plt.subplots(num=6, clear=True)
 
-    active_time_gps_values = timeGps[timeGps < timeOdo[N-1]]
+    active_time_gps_values = timeGps[timeGps < timeOdo[N - 1]]
     time_gps_delta = active_time_gps_values[-1] - timeGps[0]
     color_scale = (active_time_gps_values - timeGps[0]) / time_gps_delta
 
     ax6.scatter(*eta[3:].reshape(-1, 2).T, color="r", marker="x")
     ax6.scatter(
-            Lo_m[timeGps < timeOdo[N - 1]],
-            La_m[timeGps < timeOdo[N - 1]],
-            c=color_scale,
-            marker=".",
-            label="GPS",
+        Lo_m[timeGps < timeOdo[N - 1]],
+        La_m[timeGps < timeOdo[N - 1]],
+        c=color_scale,
+        marker=".",
+        label="GPS",
     )
     ax6.plot(*xupd[mk_first:mk, :2].T)
     ax6.set(
-        title=f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
+        title=
+        f"Steps {k}, laser scans {mk-1}, landmarks {len(eta[3:])//2},\nmeasurements {z.shape[0]}, num new = {np.sum(a[mk] == -1)}"
     )
     ax6.legend(["Trajectory", "Measurements", "GPS"])
     fig6.savefig("landmarks.eps", format="eps")
